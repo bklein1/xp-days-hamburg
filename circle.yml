@@ -123,36 +123,6 @@ test:
         esac
       : parallel: true
 
-
-deployment:
-  dev_actions:
-    branch: dev
-    commands:
-      # Push image to Docker Hub.
-      - docker login -u "${DOCKER_LOGIN_USERNAME}" -p "${DOCKER_LOGIN_PASSWORD}" -e "${DOCKER_LOGIN_EMAIL}"
-      - docker push "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}"
-      # Merge tested commit into master.
-      - wget -t 3 -O "/tmp/${MERGE_SCRIPT}" "${MERGE_SCRIPT_URL_PREFIX}/${MERGE_SCRIPT}" && chmod 750 "/tmp/${MERGE_SCRIPT}"
-      - /tmp/${MERGE_SCRIPT} -c "${CIRCLE_SHA1}" -e "${CIRCLE_BRANCH}" -t "${GIT_UPSTREAM_BRANCH_MASTER}" -r "${GIT_UPSTREAM_URL}"
-  master_actions:
-    branch: master
-    commands:
-      # Push image to Docker Hub.
-      - docker login -u "${DOCKER_LOGIN_USERNAME}" -p "${DOCKER_LOGIN_PASSWORD}" -e "${DOCKER_LOGIN_EMAIL}"
-      - docker push "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}"
-      # Merge tested commit into stable.
-      - wget -t 3 -O "/tmp/${MERGE_SCRIPT}" "${MERGE_SCRIPT_URL_PREFIX}/${MERGE_SCRIPT}" && chmod 750 "/tmp/${MERGE_SCRIPT}"
-      - /tmp/${MERGE_SCRIPT} -c "${CIRCLE_SHA1}" -e "${CIRCLE_BRANCH}" -t "${GIT_UPSTREAM_BRANCH_PRODUCTION}" -r "${GIT_UPSTREAM_URL}"
-  stable_actions:
-    branch: stable
-    commands:
-      # Push image to Docker Hub.
-      - docker login -u "${DOCKER_LOGIN_USERNAME}" -p "${DOCKER_LOGIN_PASSWORD}" -e "${DOCKER_LOGIN_EMAIL}"
-      - docker push "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}"
-      # Tag with latest and push to Docker Hub.
-      - docker tag "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}" "${LS_DOCKER_REPO}:latest"
-      - docker push "${LS_DOCKER_REPO}:latest"
-
 general:
   artifacts:
     - "${CIRCLE_ARTIFACTS}/${LS_DOCKER_TEST_SAMPLE}"
