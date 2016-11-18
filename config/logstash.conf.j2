@@ -1,0 +1,99 @@
+input {
+    {#- only if esf log sould be processed #}
+    {%- if "log" in LS_INPUT %}
+
+    ################
+    # Read esf log #
+    ################
+
+    # read from files via pattern
+    file {
+        path => ["{{ LS_LOG_VOL }}/{{ LS_PATTERN }}"]
+        start_position => "beginning"
+    }
+    {%- endif %}
+}
+
+filter {
+    {#- only if esf log should be processed #}
+    {%- if "log" in LS_INPUT %}
+
+    # exclude empty and whitespace lines
+    if [message] != "" and [message] !~ /^[\s]*$/ {
+
+        # extract esf fields from message; the content wrapper
+        json { source => "message" }
+
+    } # end exclude whitespace
+    {%- endif %}
+}
+
+output {
+
+    {%- if "elasticsearch" in LS_OUTPUT or "document" in LS_OUTPUT or "template" in LS_OUTPUT %}
+
+    ############################
+    # Output for elasticsearch #
+    ############################
+
+    # only if no error tags were created
+    if (![tags]) {
+
+        # push to elasticsearch
+        elasticsearch {
+
+           # set connection
+           hosts => {{ ES_HOSTS }}
+
+           {%- if ES_USER and ES_PASSWORD %}
+
+           # set credentials
+           user => "{{ ES_USER }}"
+           password => "{{ ES_PASSWORD }}"
+           {%- endif %}
+
+           {%- if "elasticsearch" in LS_OUTPUT or "document" in LS_OUTPUT %}
+
+           # set document path
+           index => "{{ ES_INDEX }}"
+           document_type => "{{ ES_DOCUMENT_TYPE }}"
+           document_id => "%{[@metadata][ES_DOCUMENT_ID]}"
+           {%- endif %}
+        }
+    }
+    {%- endif %}
+
+    {%- if "log" in LS_OUTPUT or "info" in LS_OUTPUT %}
+
+    #######################
+    # Output for info log #
+    #######################
+
+    # only if no error tags were created
+    if (![tags]) {
+
+            # log esf events to logstash output data
+            file {
+                path => "{{ LS_LOG_VOL }}/{{ LS_INFO }}"
+                codec => "json"   # cannot be changed
+            }
+    }
+    {%- endif %}
+
+    {%- if "log" in LS_OUTPUT or "error" in LS_OUTPUT %}
+
+    ########################
+    # Output for error log #
+    ########################
+
+    # if error tags were created during input processing
+    if [tags] {
+
+        # log failed esf events to logstash filter errors
+        file {
+            path => "{{ LS_LOG_VOL }}/{{ LS_ERROR }}"
+            codec => "json"    # cannot be changed
+        }
+    }
+    {%- endif %}
+}
