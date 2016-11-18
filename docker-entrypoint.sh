@@ -38,6 +38,8 @@ if [[ "$1" = 'logstash' ]]; then
     # Set ES_HOSTS as hosts array
     declare -a HOSTS=$( echo ${ES_HOSTS} | tr '[]' '()' | tr ',' ' ' )
 
+    NOT_AVAILABLE=false
+
     # Test each host
     for host in "${HOSTS[@]}";
     do

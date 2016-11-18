@@ -21,7 +21,7 @@ machine:
     LS_DOCKER_NETWORK: true
     # Docker build image.
     LS_DOCKER_REPO: "logstash"
-    LS_DOCKER_TAG: ${CIRCLE_BRANCH//\//-}
+    LS_DOCKER_TAG: "latest"
     # Logstash input and output types, info and error log files.
     LS_INPUT: "log"
     LS_OUTPUT: "log,elasticsearch"
@@ -63,12 +63,10 @@ test:
           export ES_INDEX="${TEST_SAMPLE}"
           mkdir -v -p ${LS_LOG} ${LS_CONFIG}
           cp -v -r config/* ${LS_CONFIG}/
-          cp -v test/${TEST_LOG} ${LS_LOG}/
+          cp -v test/sample.json ${LS_LOG}
           printf "\n%s\n" "--- Prepare test completed."
           # Fire up the container
           ./start.sh; [[ $? -eq 1 ]] && exit 1
-          # Sleep is currently needed as file input is handeld as a data stream
-          # see: https://github.com/logstash-plugins/logstash-input-file/issues/52
           sleep 50;
           # Stop the container.
           ./stop.sh; [[ $? -eq 1 ]] && exit 1

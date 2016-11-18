@@ -11,6 +11,7 @@ set -e
 export LS_INFO="logstash-info.json";
 export LS_ERROR="logstash-error.json";
 export LS_CONF="logstash.conf";
+export LS_ENV="env.list"
 
 ##########
 # docker #
@@ -22,11 +23,10 @@ DOCKER_CONFIG_VOL="/usr/share/logstash/config" # do not change - derived from do
 DOCKER_IMAGE_NAME="logstash";
 DOCKER_IMAGE_TAG="latest";
 DOCKER_CONTAINER_NAME="logstash-indexer";
-HOST_LOG_DIR="testlog"
+HOST_LOG_DIR=${LS_LOG}
 HOST_CONFIG_DIR="config"
 
-# Special flags for docker run are always used and can only be ommitted by actively disabling them.
-DOCKER_RUN_REMOVE='-it --rm'
+DOCKER_RUN_REMOVE='-it'
 DOCKER_RUN_DETACH='--detach=true';
 DOCKER_RUN_NETWORK='--net="host"';
 
