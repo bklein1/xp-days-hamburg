@@ -19,7 +19,7 @@ ENV \
 
 # Install packages and clean-up.
 RUN apt-get update && apt-get install -y \
-  curl \
+  curl build-essential \
   python-setuptools && \
   easy_install Jinja2 && \
   apt-get -y clean && \
