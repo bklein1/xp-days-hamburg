@@ -27,7 +27,7 @@ HOST_LOG_DIR=${LS_LOG}
 HOST_CONFIG_DIR="config"
 
 DOCKER_RUN_REMOVE='-it'
-DOCKER_RUN_DETACH='--detach=true';
+DOCKER_RUN_DETACH='';
 DOCKER_RUN_NETWORK='--net="host"';
 
 # Run docker container.

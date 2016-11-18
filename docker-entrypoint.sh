@@ -15,7 +15,9 @@ LS_ENV_PATH=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_ENV}" )
 
 # Get LS_CONF
 LS_CONF_JINJA=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_CONF}.j2" )
+echo "${LS_CONF_JINJA}"
 
+echo "python ${JINJA_SCRIPT} --verbose -f "${LS_ENV_PATH}" -e "LS_CONFIG_VOL" "LS_LOG_VOL" -t "${LS_CONF_JINJA}""
 python ${JINJA_SCRIPT} --verbose -f "${LS_ENV_PATH}" -e "LS_CONFIG_VOL" "LS_LOG_VOL" -t "${LS_CONF_JINJA}"
 
 LS_CONF_PATH=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_CONF}" )
