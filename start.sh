@@ -12,6 +12,8 @@ export LS_INFO="logstash-info.json";
 export LS_ERROR="logstash-error.json";
 export LS_CONF="logstash.conf";
 export LS_ENV="env.list";
+export LS_PATTERN="sample*.json";
+export ES_DOCUMENT_TYPE="sample";
 
 ##########
 # docker #
