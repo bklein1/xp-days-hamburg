@@ -1,0 +1,29 @@
+# elasticsearch circleci configuration used at integration tests
+
+# set cluster and node
+cluster.name: elasticsearch
+node.name: es-master
+node.master: true
+node.data: true
+
+# use default paths
+path.config: /etc/elasticsearch
+path.plugins: /usr/share/elasticsearch/plugins
+path.data: /var/lib/elasticsearch/data
+path.logs: /var/log/elasticsearch
+
+# use localhost and fixed ports
+network.bind_host: 127.0.0.1
+network.publish_host: 127.0.0.1
+transport.tcp.port: 9300
+http.port: 9200
+
+# enable http
+http.enabled: true
+http.cors.enabled: true
+http.cors.allow-origin: "/.*/"
+http.cors.allow-methods: OPTIONS, HEAD, GET, POST, PUT, DELETE
+
+# http basic auth plugin
+#
+# CAUTION: For now auth is not supported as circle service runs only version 0.90 of elasticsearch.

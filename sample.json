@@ -1,0 +1,2 @@
+{"level": "INFO","message":"Some message to come here."}
+{"level": "ERROR","message":"Some error message to come here.","stacktrace":"Here is the stacktrace"}

@@ -1,0 +1,161 @@
+machine:
+  pre:
+    # Configure elasticsearch circle service.
+    - sudo cp -v "/home/ubuntu/to-logstash/test/service-elasticsearch.yml" "/etc/elasticsearch/elasticsearch.yml"; cat $_
+  hosts:
+    elasticsearch.circleci.com: 127.0.0.1
+  services:
+    - elasticsearch
+    - docker
+  environment:
+    # Circle run tests with parallelism.
+    CIRCLE_PARALLEL: true
+    # Tests use dedicated docker containers, log directories and elasticsearch indexes.
+    TEST_SAMPLE: "logstash-test-process-sample"
+    TEST_PRODUCTION: "logstash-test-deploy-production"
+    # Tests use same sample log file.
+    TEST_LOG: "sample.json"
+    # Docker run options are set to detach to background and share network addresses from host to container.
+    LS_DOCKER_REMOVE: false
+    LS_DOCKER_DETACH: true
+    LS_DOCKER_NETWORK: true
+    # Docker build image.
+    LS_DOCKER_REPO: "logstash"
+    LS_DOCKER_TAG: ${CIRCLE_BRANCH//\//-}
+    # Logstash input and output types, info and error log files.
+    LS_INPUT: "log"
+    LS_OUTPUT: "log,elasticsearch"
+    LS_INFO: "logstash-info.json"
+    LS_ERROR: "logstash-error.json"
+    # Elasticsearch is needed for integration test.
+    ES_HOSTS: "[ 'elasticsearch.circleci.com:9200' ]"
+    ES_CONF: "/etc/elasticsearch/elasticsearch.yml"
+    ES_LOG: "/var/log/elasticsearch/elasticsearch.log"
+
+dependencies:
+  cache_directories:
+    - "~/docker"
+  override:
+    # Docker environment used.
+    - docker info
+    # Load cached images, if available.
+    - if [[ -e ~/docker/image.tar ]]; then docker load --input ~/docker/image.tar; fi
+    # Build our image.
+    - ./build.sh
+    # Save built image into cache.
+    - mkdir -v -p ~/docker; docker save "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}" > ~/docker/image.tar
+    # Make sure circle project parallelism is set to at least 2 nodes.
+    - |
+        if [[ "${CIRCLE_NODE_TOTAL}" -eq "1" ]]; then {
+          echo "Parallelism [${CIRCLE_NODE_TOTAL}x] needs to be 2x to fasten execution time."
+          echo "You also need to set our circle env CIRCLE_PARALLEL [${CIRCLE_PARALLEL}] to true."
+        }; fi
+test:
+  override:
+    - ? >
+        case $CIRCLE_NODE_INDEX in
+        0)
+          printf "\n%s\n" "+++ Begin test of docker container [${TEST_SAMPLE}] +++"
+          printf "\n%s\n\n" "=== Prepare test and setup config and log dirs on host ==="
+          export LS_DOCKER_CONTAINER="${TEST_SAMPLE}"
+          export LS_LOG="/tmp/${TEST_SAMPLE}/log"
+          export LS_CONFIG="/tmp/${TEST_SAMPLE}/config"
+          export ES_INDEX="${TEST_SAMPLE}"
+          mkdir -v -p ${LS_LOG} ${LS_CONFIG}
+          cp -v -r config/* ${LS_CONFIG}/
+          cp -v test/${TEST_LOG} ${LS_LOG}/
+          printf "\n%s\n" "--- Prepare test completed."
+          # Fire up the container
+          ./start.sh; [[ $? -eq 1 ]] && exit 1
+          # Sleep is currently needed as file input is handeld as a data stream
+          # see: https://github.com/logstash-plugins/logstash-input-file/issues/52
+          sleep 50;
+          # Stop the container.
+          ./stop.sh; [[ $? -eq 1 ]] && exit 1
+          # Test metrics from files including input, output and errors.
+          ./test/test-metrics-from-files.sh; [[ $? -eq 1 ]] && exit 1
+          # Test metrics form elasticsearch including input, template and documents.
+          ./test/test-metrics-from-elasticsearch.sh; [[ $? -eq 1 ]] && exit 1
+          printf "\n%s\n" "+++ End test of docker container [${TEST_SAMPLE}] +++"
+          # Exit case statement if run in parallel else proceed to next case.
+          $CIRCLE_PARALLEL && exit 0
+          ;&
+        1)
+          printf "\n%s\n" "+++ Begin test of [${TEST_PRODUCTION}] +++"
+          printf "\n%s\n\n" "=== Prepare test and setup config and log dirs on host ==="
+          export LS_DOCKER_CONTAINER="${TEST_PRODUCTION}"
+          export LS_LOG="/tmp/${TEST_PRODUCTION}/log"
+          export LS_CONFIG="/tmp/${TEST_PRODUCTION}/config"
+          export ES_INDEX="${TEST_PRODUCTION}"
+          mkdir -v -p ${LS_LOG} ${LS_CONFIG}
+          cp -v -r config/* ${LS_CONFIG}/
+          cp -v test/${TEST_LOG} ${LS_LOG}/
+          printf "\n%s\n" "--- Prepare test completed."
+          # Run the full deploy script as used in jenkins.
+          ./deploy.sh; [[ $? -eq 1 ]] && exit 1
+          # Test metrics from files including input, output and errors.
+          ./test/test-metrics-from-files.sh; [[ $? -eq 1 ]] && exit 1
+          # Test metrics form elasticsearch including input, template and documents.
+          ./test/test-metrics-from-elasticsearch.sh; [[ $? -eq 1 ]] && exit 1
+          printf "\n%s\n" "+++ End test of [${TEST_PRODUCTION}] +++"
+          # Exit case statement if run in parallel else proceed to next case.
+          $CIRCLE_PARALLEL && exit 0
+          ;&
+        esac
+      : parallel: true
+  post:
+    - ? >
+        case $CIRCLE_NODE_INDEX in
+        0)
+          printf "\n%s\n\n" "=== Archive artifacts of [${TEST_SAMPLE}] ==="
+          sudo mv -v -f "/tmp/${TEST_SAMPLE}" "${CIRCLE_ARTIFACTS}/"
+          mkdir -v -p "${CIRCLE_ARTIFACTS}/${TEST_SAMPLE}/services"
+          sudo cp -v "${ES_CONF}" "${ES_LOG}" $_
+          # Exit case statement if run in parallel else proceed to next case.
+          $CIRCLE_PARALLEL && exit 0
+          ;&
+        1)
+          printf "\n%s\n\n" "=== Archive artifacts of [${TEST_PRODUCTION}] ==="
+          sudo mv -v -f "/tmp/${TEST_PRODUCTION}" "${CIRCLE_ARTIFACTS}/"
+          mkdir -v -p "${CIRCLE_ARTIFACTS}/${TEST_PRODUCTION}/services"
+          sudo cp -v "${ES_CONF}" "${ES_LOG}" $_
+          # Exit case statement if run in parallel else proceed to next case.
+          $CIRCLE_PARALLEL && exit 0
+          ;&
+        esac
+      : parallel: true
+
+
+deployment:
+  dev_actions:
+    branch: dev
+    commands:
+      # Push image to Docker Hub.
+      - docker login -u "${DOCKER_LOGIN_USERNAME}" -p "${DOCKER_LOGIN_PASSWORD}" -e "${DOCKER_LOGIN_EMAIL}"
+      - docker push "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}"
+      # Merge tested commit into master.
+      - wget -t 3 -O "/tmp/${MERGE_SCRIPT}" "${MERGE_SCRIPT_URL_PREFIX}/${MERGE_SCRIPT}" && chmod 750 "/tmp/${MERGE_SCRIPT}"
+      - /tmp/${MERGE_SCRIPT} -c "${CIRCLE_SHA1}" -e "${CIRCLE_BRANCH}" -t "${GIT_UPSTREAM_BRANCH_MASTER}" -r "${GIT_UPSTREAM_URL}"
+  master_actions:
+    branch: master
+    commands:
+      # Push image to Docker Hub.
+      - docker login -u "${DOCKER_LOGIN_USERNAME}" -p "${DOCKER_LOGIN_PASSWORD}" -e "${DOCKER_LOGIN_EMAIL}"
+      - docker push "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}"
+      # Merge tested commit into stable.
+      - wget -t 3 -O "/tmp/${MERGE_SCRIPT}" "${MERGE_SCRIPT_URL_PREFIX}/${MERGE_SCRIPT}" && chmod 750 "/tmp/${MERGE_SCRIPT}"
+      - /tmp/${MERGE_SCRIPT} -c "${CIRCLE_SHA1}" -e "${CIRCLE_BRANCH}" -t "${GIT_UPSTREAM_BRANCH_PRODUCTION}" -r "${GIT_UPSTREAM_URL}"
+  stable_actions:
+    branch: stable
+    commands:
+      # Push image to Docker Hub.
+      - docker login -u "${DOCKER_LOGIN_USERNAME}" -p "${DOCKER_LOGIN_PASSWORD}" -e "${DOCKER_LOGIN_EMAIL}"
+      - docker push "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}"
+      # Tag with latest and push to Docker Hub.
+      - docker tag "${LS_DOCKER_REPO}:${LS_DOCKER_TAG}" "${LS_DOCKER_REPO}:latest"
+      - docker push "${LS_DOCKER_REPO}:latest"
+
+general:
+  artifacts:
+    - "${CIRCLE_ARTIFACTS}/${LS_DOCKER_TEST_SAMPLE}"
+    - "${CIRCLE_ARTIFACTS}/${LS_DOCKER_TEST_PRODUCTION}"
