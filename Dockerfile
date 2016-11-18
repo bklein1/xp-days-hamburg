@@ -14,7 +14,7 @@ RUN echo "${TZ}" | tee /etc/timezone && \
 ##########################################
 
 ENV \
-  JINJA_SCRIPT="./render_jinja_template.py" \
+  JINJA_SCRIPT="render_jinja_template.py" \
   REPO_PROD_BRANCH="master"
 
 # Install packages and clean-up.
@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
   rm -rf /var/lib/apt/lists/*
 
 # Add Jinja templating script from repo epages-infra.
+COPY ${JINJA_SCRIPT} ./
 RUN \
   chown logstash:logstash ${JINJA_SCRIPT} && \
   chmod +x ${JINJA_SCRIPT}
