@@ -1,7 +1,7 @@
 machine:
   pre:
     # Configure elasticsearch circle service.
-    - sudo cp -v "/home/ubuntu/to-logstash/test/service-elasticsearch.yml" "/etc/elasticsearch/elasticsearch.yml"; cat $_
+    - sudo cp -v "/home/ubuntu/xp-days-hamburg/test/service-elasticsearch.yml" "/etc/elasticsearch/elasticsearch.yml"; cat $_
   hosts:
     elasticsearch.circleci.com: 127.0.0.1
   services:
