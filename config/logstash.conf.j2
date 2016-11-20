@@ -13,6 +13,15 @@ filter {
     if [message] != "" and [message] !~ /^[\s]*$/ {
         json { source => "message" }
     }
+    if (![tags]) {
+        fingerprint {
+            target => "[@metadata][ES_DOCUMENT_ID]"
+            source => ["level", "text"]
+            concatenate_sources => true
+            key => "any-long-encryption-key"
+            method => "SHA1"    # return the same hash if all values of source fields are equal
+        }
+    }
     {%- endif %}
 }
 
