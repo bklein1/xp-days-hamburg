@@ -29,8 +29,8 @@ DOCKER_CONTAINER_NAME="logstash-indexer";
 HOST_CONFIG_DIR="${PWD}/config";
 HOST_LOG_DIR="${PWD}/test";
 
-DOCKER_RUN_REMOVE='-it'
-DOCKER_RUN_DETACH='--detach=true';
+DOCKER_RUN_REMOVE='-it --rm'
+DOCKER_RUN_DETACH='--detach=false';
 DOCKER_RUN_NETWORK='--net="host"';
 
 # Run docker container.
