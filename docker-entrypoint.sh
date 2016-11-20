@@ -11,17 +11,24 @@ fi
 # Change the ownership of the mounted volumes to user logstash at docker container runtime
 chown -R logstash:logstash ${LS_CONFIG_VOL} ${LS_LOG_VOL}
 
+env
 LS_ENV_PATH=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_ENV}" )
+cat ${LS_ENV_PATH}
 
 # Get LS_CONF
 LS_CONF_JINJA=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_CONF}.j2" )
-echo "${LS_CONF_JINJA}"
+cat ${LS_CONF_JINJA}
 
 echo "python ${JINJA_SCRIPT} --verbose -f "${LS_ENV_PATH}" -e "LS_CONFIG_VOL" "LS_LOG_VOL" -t "${LS_CONF_JINJA}""
 python ${JINJA_SCRIPT} --verbose -f "${LS_ENV_PATH}" -e "LS_CONFIG_VOL" "LS_LOG_VOL" -t "${LS_CONF_JINJA}"
 
+echo "RENDERED: ${LS_CONF_JINJA}"
+cat ${LS_CONF_JINJA}
+
 LS_CONF_PATH=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_CONF}" )
 
+echo "PATH: ${LS_CONF_PATH}"
+cat ${LS_CONF_PATH}
 
 # Start logstash agent
 printf "\n\n%s\n\n" "=== Start logstash agent with logstash conf [${LS_CONF}] ==="
