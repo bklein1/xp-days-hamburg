@@ -67,7 +67,7 @@ test:
           export ES_INDEX="${TEST_SAMPLE}"
           mkdir -v -p ${LS_LOG} ${LS_CONFIG}
           cp -v -r config/* ${LS_CONFIG}/
-          cp -v test/sample.json ${LS_LOG}
+          cp -v test/${TEST_LOG} ${LS_LOG}/
           printf "\n%s\n" "--- Prepare test completed."
           # Fire up the container
           ./start.sh; [[ $? -eq 1 ]] && exit 1
