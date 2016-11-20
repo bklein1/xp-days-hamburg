@@ -27,7 +27,7 @@ DOCKER_IMAGE_TAG="latest";
 DOCKER_CONTAINER_NAME="logstash-indexer";
 
 HOST_CONFIG_DIR="${PWD}/config";
-HOST_LOG_DIR="${PWD}/log";
+HOST_LOG_DIR="${PWD}/test";
 
 DOCKER_RUN_REMOVE='-it'
 DOCKER_RUN_DETACH='--detach=true';

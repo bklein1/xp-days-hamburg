@@ -10,6 +10,7 @@ fi
 
 # Change the ownership of the mounted volumes to user logstash at docker container runtime
 chown -R logstash:logstash ${LS_CONFIG_VOL} ${LS_LOG_VOL}
+chmod -R 777 ${LS_CONFIG_VOL} ${LS_LOG_VOL}
 
 env
 LS_ENV_PATH=$( find "${LS_CONFIG_VOL}" -maxdepth 3 -iname "${LS_ENV}" )
