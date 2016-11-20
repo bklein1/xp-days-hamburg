@@ -50,6 +50,10 @@ dependencies:
           echo "Parallelism [${CIRCLE_NODE_TOTAL}x] needs to be 2x to fasten execution time."
           echo "You also need to set our circle env CIRCLE_PARALLEL [${CIRCLE_PARALLEL}] to true."
         }; fi
+  post:
+  # Check if elasticsearch is there
+  - sleep 10 && curl --retry 10 --retry-delay 5 -v http://127.0.0.1:9200/
+  
 test:
   override:
     - ? >
