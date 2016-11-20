@@ -53,7 +53,7 @@ dependencies:
   post:
     # Check if elasticsearch is there
     - sleep 10 && curl --retry 10 --retry-delay 5 -v http://127.0.0.1:9200/
-  
+
 test:
   override:
     - ? >
@@ -62,7 +62,7 @@ test:
           printf "\n%s\n" "+++ Begin test of docker container [${TEST_SAMPLE}] +++"
           printf "\n%s\n\n" "=== Prepare test and setup config and log dirs on host ==="
           export LS_DOCKER_CONTAINER="${TEST_SAMPLE}"
-          export LS_LOG="/tmp/${TEST_SAMPLE}/log"
+          export LS_LOG="/usr/share/logstash/log"
           export LS_CONFIG="/tmp/${TEST_SAMPLE}/config"
           export ES_INDEX="${TEST_SAMPLE}"
           mkdir -v -p ${LS_LOG} ${LS_CONFIG}
