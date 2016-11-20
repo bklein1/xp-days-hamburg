@@ -24,7 +24,7 @@ machine:
     LS_DOCKER_TAG: "latest"
     # Logstash input and output types, info and error log files.
     LS_INPUT: "log"
-    LS_OUTPUT: "log,elasticsearch,error"
+    LS_OUTPUT: "log,elasticsearch"
     LS_INFO: "logstash-info.json"
     LS_ERROR: "logstash-error.json"
     # Elasticsearch is needed for integration test.
